@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>PromptForge — AI Prompt Engineer</title>
+<meta name="description" content="Transform any prompt in any language into a precision-engineered, AI-ready masterpiece."/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Mono:wght@400;500&family=Noto+Kufi+Arabic:wght@400;500;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+:root {
+  --bg:#080c10;--surface:#0e1318;--surface2:#141b22;
+  --border:rgba(255,255,255,0.07);--border-active:rgba(99,210,255,0.35);
+  --text:#dde8f0;--text-muted:#4a6070;--text-dim:#2a3a48;
+  --accent:#63d2ff;--accent2:#ff6b35;--accent3:#7cff8a;--gold:#ffd166;
+  --red:#ff6b6b;--radius:10px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans','Noto Kufi Arabic',sans-serif;line-height:1.6;min-height:100vh}
+.app{min-height:100vh;padding:0 0 80px;background:radial-gradient(ellipse 60% 40% at 10% 0%,rgba(99,210,255,0.05) 0%,transparent 60%),radial-gradient(ellipse 50% 40% at 90% 100%,rgba(255,107,53,0.04) 0%,transparent 60%),var(--bg)}
+
+/* HEADER */
+.header{text-align:center;padding:48px 20px 32px;position:relative}
+.header::after{content:'';display:block;width:100%;height:1px;background:linear-gradient(90deg,transparent,var(--border),rgba(99,210,255,0.2),var(--border),transparent);margin-top:32px}
+.badge{display:inline-flex;align-items:center;gap:6px;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:2.5px;text-transform:uppercase;color:var(--accent);border:1px solid rgba(99,210,255,0.2);padding:5px 14px;border-radius:20px;margin-bottom:20px;background:rgba(99,210,255,0.04)}
+.title{font-family:'Syne',sans-serif;font-size:clamp(38px,8vw,76px);font-weight:800;color:var(--text);letter-spacing:-2px;line-height:.95;margin-bottom:14px}
+.title em{font-style:normal;color:var(--accent)}
+.subtitle{color:var(--text-muted);font-size:14px;max-width:460px;margin:0 auto;font-weight:300;line-height:1.7}
+
+/* TECHNIQUES BAR */
+.techs{display:flex;flex-wrap:wrap;gap:7px;justify-content:center;padding:20px 20px 0;max-width:820px;margin:0 auto}
+.tpill{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.8px;color:var(--text-muted);border:1px solid var(--border);padding:4px 10px;border-radius:20px;background:rgba(255,255,255,0.02);text-transform:uppercase;transition:all .3s}
+.tpill.on{color:var(--accent);border-color:rgba(99,210,255,0.3);background:rgba(99,210,255,0.06)}
+
+/* MAIN */
+.main{max-width:820px;margin:36px auto 0;padding:0 16px}
+
+/* API KEY NOTICE */
+.api-notice{background:rgba(255,209,102,0.05);border:1px solid rgba(255,209,102,0.2);border-radius:var(--radius);padding:14px 16px;margin-bottom:14px;display:flex;align-items:flex-start;gap:10px}
+.api-notice-icon{font-size:16px;flex-shrink:0;margin-top:1px}
+.api-notice-text{font-size:12px;color:#c0a060;line-height:1.6}
+.api-notice-text strong{color:var(--gold);display:block;margin-bottom:2px}
+.api-key-row{display:flex;gap:8px;margin-top:8px;align-items:center;flex-wrap:wrap}
+.api-input{flex:1;min-width:200px;background:rgba(0,0,0,0.4);border:1px solid rgba(255,209,102,0.25);border-radius:6px;color:var(--text);font-family:'DM Mono',monospace;font-size:12px;padding:8px 12px;outline:none;transition:border-color .2s}
+.api-input:focus{border-color:rgba(255,209,102,0.5)}
+.api-input::placeholder{color:var(--text-dim)}
+.api-save-btn{background:rgba(255,209,102,0.1);border:1px solid rgba(255,209,102,0.3);color:var(--gold);padding:8px 14px;border-radius:6px;font-size:12px;cursor:pointer;font-family:'DM Mono',monospace;white-space:nowrap;transition:all .2s}
+.api-save-btn:hover{background:rgba(255,209,102,0.18)}
+.api-saved{font-family:'DM Mono',monospace;font-size:10px;color:var(--accent3);display:flex;align-items:center;gap:4px}
+
+/* PANEL */
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;transition:border-color .3s;margin-bottom:12px}
+.panel:focus-within{border-color:var(--border-active)}
+.panel-top{display:flex;align-items:center;justify-content:space-between;padding:11px 15px;border-bottom:1px solid var(--border)}
+.panel-lbl{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--text-muted)}
+.lang-badge{font-family:'DM Mono',monospace;font-size:10px;color:var(--gold);background:rgba(255,209,102,0.08);border:1px solid rgba(255,209,102,0.2);padding:3px 8px;border-radius:4px}
+textarea.raw{width:100%;min-height:130px;background:transparent;border:none;outline:none;resize:none;color:var(--text);font-family:'DM Sans','Noto Kufi Arabic',sans-serif;font-size:15px;line-height:1.7;padding:15px;direction:auto}
+textarea.raw::placeholder{color:var(--text-dim)}
+.panel-foot{display:flex;align-items:center;justify-content:space-between;padding:11px 15px;border-top:1px solid var(--border);flex-wrap:wrap;gap:8px}
+.char-ct{font-family:'DM Mono',monospace;font-size:10px;color:var(--text-dim)}
+.char-ct.warn{color:#ffaa55}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:7px;background:var(--accent);color:#060c12;border:none;padding:10px 20px;border-radius:6px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;letter-spacing:.3px;white-space:nowrap}
+.btn:hover{background:#8de0ff;transform:translateY(-1px)}
+.btn:active{transform:translateY(0)}
+.btn:disabled{opacity:.35;cursor:not-allowed;transform:none}
+.btn.ghost{background:transparent;color:var(--text-muted);border:1px solid var(--border)}
+.btn.ghost:hover{color:var(--text);border-color:rgba(255,255,255,0.15);background:rgba(255,255,255,0.03)}
+.btn.sm{padding:7px 13px;font-size:12px}
+
+/* LOADING */
+.loading{text-align:center;padding:52px 20px;animation:fadeIn .4s ease}
+.orb{width:46px;height:46px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 16px}
+.loading-msg{color:var(--text-muted);font-size:12px;font-family:'DM Mono',monospace;letter-spacing:1px;animation:pulse 2s infinite}
+.loading-steps{margin-top:14px;display:flex;flex-direction:column;gap:5px}
+.lstep{font-size:11px;color:var(--text-dim);transition:color .3s}
+.lstep.on{color:var(--accent)}
+
+/* PROGRESS BAR */
+.progress-wrap{margin-top:16px;background:var(--surface2);border-radius:4px;height:3px;overflow:hidden;max-width:280px;margin-left:auto;margin-right:auto}
+.progress-bar{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent3));border-radius:4px;transition:width .5s ease}
+
+/* QUESTIONS */
+.q-panel{background:var(--surface);border:1px solid rgba(255,209,102,0.25);border-radius:var(--radius);overflow:hidden;animation:slideUp .4s ease;margin-bottom:12px}
+.q-head{background:rgba(255,209,102,0.04);border-bottom:1px solid rgba(255,209,102,0.15);padding:13px 18px;display:flex;align-items:center;gap:10px}
+.q-icon{width:28px;height:28px;background:rgba(255,209,102,0.1);border:1px solid rgba(255,209,102,0.3);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0}
+.q-title{font-size:14px;font-weight:600;color:var(--gold)}
+.q-desc{font-size:11px;color:var(--text-muted);margin-top:1px}
+.q-body{padding:18px;display:flex;flex-direction:column;gap:18px}
+.qitem{animation:fadeIn .4s ease forwards;opacity:0}
+.qitem:nth-child(1){animation-delay:.1s}
+.qitem:nth-child(2){animation-delay:.2s}
+.qitem:nth-child(3){animation-delay:.3s}
+.qtext{font-size:14px;color:var(--text);margin-bottom:3px;font-weight:500}
+.qwhy{font-size:11px;color:var(--text-muted);font-family:'DM Mono',monospace;margin-bottom:9px;letter-spacing:.4px}
+.opts{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+.opt{background:transparent;border:1px solid var(--border);color:var(--text-muted);padding:6px 12px;border-radius:5px;font-size:12px;cursor:pointer;font-family:'DM Sans','Noto Kufi Arabic',sans-serif;transition:all .2s;direction:auto}
+.opt:hover{border-color:var(--accent);color:var(--accent)}
+.opt.sel{border-color:var(--accent);color:var(--accent);background:rgba(99,210,255,0.06)}
+textarea.qa{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:'DM Sans','Noto Kufi Arabic',sans-serif;font-size:13px;padding:9px 12px;outline:none;resize:none;min-height:58px;direction:auto;transition:border-color .2s}
+textarea.qa:focus{border-color:var(--border-active)}
+textarea.qa::placeholder{color:var(--text-dim)}
+.q-foot{border-top:1px solid var(--border);padding:13px 18px;display:flex;justify-content:space-between;align-items:center;background:rgba(0,0,0,0.2);flex-wrap:gap;gap:8px}
+
+/* RESULT */
+.result{animation:slideUp .5s ease;display:flex;flex-direction:column;gap:11px}
+
+/* SCORES */
+.scores{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.score-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;text-align:center}
+.sc-lbl{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--text-muted);margin-bottom:7px}
+.sc-val{font-family:'Syne',sans-serif;font-size:46px;font-weight:800;line-height:1}
+.sc-val.bad{color:var(--red)}
+.sc-val.good{color:var(--accent3)}
+.sc-sub{font-size:11px;color:var(--text-muted);margin-top:4px}
+.sc-exp{font-size:11px;color:var(--text-muted);grid-column:1/-1;padding:10px 14px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);line-height:1.5}
+
+/* RESULT CARDS */
+.rcard{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+.rcard-head{display:flex;align-items:center;justify-content:space-between;padding:11px 15px;border-bottom:1px solid var(--border);background:rgba(255,255,255,0.01);flex-wrap:wrap;gap:6px}
+.rcard-title{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--text-muted);display:flex;align-items:center;gap:5px}
+.rcard-title::before{content:'▸';color:var(--accent);font-size:10px}
+.copy-btn{background:transparent;border:1px solid var(--border);color:var(--text-muted);padding:5px 10px;border-radius:4px;font-size:10px;cursor:pointer;transition:all .2s;font-family:'DM Mono',monospace;letter-spacing:.5px}
+.copy-btn:hover{border-color:var(--accent3);color:var(--accent3)}
+.copy-btn.ok{border-color:var(--accent3);color:var(--accent3);background:rgba(124,255,138,0.06)}
+pre.enhanced{padding:18px;font-family:'DM Mono',monospace;font-size:12px;line-height:1.9;color:#c8e0ec;white-space:pre-wrap;word-break:break-word;background:rgba(0,0,0,0.35);max-height:380px;overflow-y:auto}
+pre.enhanced::-webkit-scrollbar{width:4px}
+pre.enhanced::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+.techs-used{padding:14px;display:flex;flex-wrap:wrap;gap:6px}
+.upill{font-family:'DM Mono',monospace;font-size:10px;color:var(--accent);background:rgba(99,210,255,0.06);border:1px solid rgba(99,210,255,0.2);padding:3px 8px;border-radius:4px;letter-spacing:.4px}
+.imps{padding:15px;display:flex;flex-direction:column;gap:9px}
+.imp{display:flex;gap:9px;align-items:flex-start;font-size:13px;color:var(--text-muted);animation:fadeIn .4s ease forwards;opacity:0;line-height:1.5}
+.imp:nth-child(1){animation-delay:.1s}
+.imp:nth-child(2){animation-delay:.2s}
+.imp:nth-child(3){animation-delay:.3s}
+.imp:nth-child(4){animation-delay:.4s}
+.impn{width:20px;height:20px;background:rgba(99,210,255,0.08);border:1px solid rgba(99,210,255,0.2);border-radius:3px;font-family:'DM Mono',monospace;font-size:10px;color:var(--accent);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+.tip{background:rgba(255,209,102,0.04);border:1px solid rgba(255,209,102,0.15);border-radius:var(--radius);padding:14px 16px;display:flex;gap:11px;align-items:flex-start}
+.tip-ico{font-size:18px;flex-shrink:0}
+.tip-txt{font-size:13px;color:#c0a060;line-height:1.6}
+.qbadge{display:inline-flex;align-items:center;gap:5px;font-family:'DM Mono',monospace;font-size:11px;letter-spacing:.8px;padding:3px 9px;border-radius:4px;font-weight:600}
+.qbadge.Expert{color:var(--accent3);background:rgba(124,255,138,0.08);border:1px solid rgba(124,255,138,0.25)}
+.qbadge.Professional{color:var(--accent);background:rgba(99,210,255,0.08);border:1px solid rgba(99,210,255,0.25)}
+.qbadge.Good{color:var(--gold);background:rgba(255,209,102,0.08);border:1px solid rgba(255,209,102,0.25)}
+.qbadge.Basic{color:#ff9090;background:rgba(255,107,107,0.08);border:1px solid rgba(255,107,107,0.25)}
+.ract{display:flex;gap:8px;padding:14px;border-top:1px solid var(--border);flex-wrap:wrap}
+
+/* TEST SECTION */
+.test-card{background:var(--surface);border:1px solid rgba(124,255,138,0.2);border-radius:var(--radius);overflow:hidden}
+.test-head{background:rgba(124,255,138,0.04);border-bottom:1px solid rgba(124,255,138,0.15);padding:11px 15px;display:flex;align-items:center;gap:8px}
+.test-title{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--accent3)}
+.test-new{font-size:9px;background:rgba(124,255,138,0.1);border:1px solid rgba(124,255,138,0.3);color:var(--accent3);padding:2px 6px;border-radius:3px;font-family:'DM Mono',monospace;letter-spacing:1px}
+.test-body{padding:15px}
+.test-note{font-size:12px;color:var(--text-muted);margin-bottom:10px;line-height:1.6}
+textarea.test-in{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:'DM Sans','Noto Kufi Arabic',sans-serif;font-size:13px;padding:10px 12px;outline:none;resize:none;min-height:70px;transition:border-color .2s;direction:auto}
+textarea.test-in:focus{border-color:rgba(124,255,138,0.35)}
+textarea.test-in::placeholder{color:var(--text-dim)}
+.test-actions{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.btn.green{background:var(--accent3);color:#060c12}
+.btn.green:hover{background:#a0ffac}
+.test-result{margin-top:14px;background:rgba(0,0,0,0.3);border:1px solid var(--border);border-radius:6px;padding:14px;font-size:13px;color:var(--text);line-height:1.8;max-height:320px;overflow-y:auto;white-space:pre-wrap;direction:auto}
+.test-result::-webkit-scrollbar{width:4px}
+.test-result::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+.test-loading{display:flex;align-items:center;gap:10px;color:var(--text-muted);font-size:12px;font-family:'DM Mono',monospace;padding:10px 0}
+.mini-orb{width:18px;height:18px;border:2px solid var(--border);border-top-color:var(--accent3);border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0}
+
+/* ERROR */
+.err{background:rgba(255,80,80,0.06);border:1px solid rgba(255,80,80,0.2);border-radius:var(--radius);padding:13px 15px;font-size:13px;color:#ff9090;display:flex;align-items:flex-start;gap:8px;margin-bottom:12px;line-height:1.5}
+
+/* HISTORY */
+.hist-section{margin-top:44px;padding:0 16px;max-width:820px;margin-left:auto;margin-right:auto}
+.sec-lbl{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--text-dim);margin-bottom:11px;display:flex;align-items:center;gap:8px}
+.hist-item{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:11px 14px;margin-bottom:7px;display:flex;align-items:center;gap:11px;cursor:pointer;transition:all .2s}
+.hist-item:hover{border-color:var(--border-active);background:var(--surface2)}
+.hist-txt{font-size:13px;color:var(--text-muted);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;direction:auto}
+.hist-score{font-family:'DM Mono',monospace;font-size:11px;color:var(--accent);flex-shrink:0}
+.hist-clear{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:1px;color:var(--text-dim);background:transparent;border:none;cursor:pointer;text-transform:uppercase;transition:color .2s}
+.hist-clear:hover{color:var(--red)}
+
+/* FOOTER */
+.footer{text-align:center;padding:40px 20px 0;color:var(--text-dim);font-size:11px;font-family:'DM Mono',monospace;letter-spacing:.5px}
+.footer a{color:var(--text-muted);text-decoration:none}
+.footer a:hover{color:var(--accent)}
+
+/* ANIMATIONS */
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes slideUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+
+/* MOBILE */
+@media(max-width:520px){
+  .scores{grid-template-columns:1fr 1fr}
+  .sc-val{font-size:38px}
+  .title{letter-spacing:-1px}
+  .panel-foot{flex-direction:column;align-items:flex-start}
+  .q-foot{flex-direction:column}
+  .q-foot .btn{width:100%;justify-content:center}
+}
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+const { useState, useRef, useEffect } = React;
+
+const ANALYZER_SYS = `You are PromptForge's Analysis Engine — a world-class expert in prompt engineering for LLMs (GPT-4, Claude, Gemini, etc.).
+
+Analyze the user's raw prompt (in ANY language), then decide:
+1. Do you need clarification before enhancing? (max 3 targeted questions)
+2. Or is the intent clear enough to enhance directly?
+
+Respond ONLY with valid JSON, no markdown, no text outside JSON:
+{
+  "needs_clarification": true | false,
+  "detected_language": "Arabic | English | French | ...",
+  "detected_intent": "one sentence describing what the user wants",
+  "questions": [
+    {
+      "id": "q1",
+      "question": "question in the SAME language as the user input",
+      "why": "brief reason why this matters",
+      "options": ["option A", "option B", "option C"]
+    }
+  ]
+}
+If needs_clarification is false, questions must be [].
+Ask ONLY when truly critical info is missing. Focus on: target audience, output format, domain, tone, constraints.`;
+
+const ENHANCER_SYS = `You are PromptForge's Enhancement Engine — the world's best prompt engineer for AI models.
+
+Transform the user's raw prompt into a MASTERCLASS, production-ready prompt using ALL these techniques:
+
+1. Role Assignment — give the AI a specific expert persona
+2. Context Injection — add relevant background
+3. Chain-of-Thought — ask step-by-step reasoning when needed
+4. Output Format Specification — define exact structure/length/format
+5. Constraint Setting — what to include AND what to avoid
+6. Few-Shot Examples — add 1-2 examples if they clarify the task
+7. Quality Anchors — define what "excellent" looks like
+8. Escape Hatches — tell AI what to do if uncertain
+9. Language Optimization — final prompt MUST be in ENGLISH (best for LLMs)
+
+RULES:
+- Enhanced prompt MUST be in ENGLISH regardless of input language
+- Use sections: [ROLE] [CONTEXT] [TASK] [FORMAT] [CONSTRAINTS] [EXAMPLE] [QUALITY]
+- Make it immediately usable — paste into any AI tool for great results
+- Remove all ambiguity
+
+Respond ONLY with valid JSON:
+{
+  "enhanced_prompt": "full enhanced prompt in English",
+  "techniques_used": ["Role Assignment", "Chain-of-Thought", ...],
+  "score_before": 1-10,
+  "score_after": 1-10,
+  "score_explanation": "brief explanation",
+  "key_improvements": ["Improvement 1: what and how", "Improvement 2", "Improvement 3"],
+  "usage_tip": "one powerful usage tip",
+  "estimated_quality": "Basic | Good | Professional | Expert"
+}`;
+
+const ALL_TECHS = ["Role Assignment","Chain-of-Thought","Output Format","Constraints","Context Injection","Few-Shot Examples","Quality Anchors","Escape Hatches","Language Optimization"];
+
+const LOADING_STEPS = ["Detecting language & intent...","Analyzing prompt weaknesses...","Applying 9 engineering techniques...","Optimizing for AI comprehension...","Finalizing enhanced prompt..."];
+
+function PromptForge() {
+  const [raw, setRaw] = useState("");
+  const [phase, setPhase] = useState("input");
+  const [stepIdx, setStepIdx] = useState(0);
+  const [progress, setProgress] = useState(0);
+  const [analysis, setAnalysis] = useState(null);
+  const [answers, setAnswers] = useState({});
+  const [result, setResult] = useState(null);
+  const [error, setError] = useState(null);
+  const [copied, setCopied] = useState(false);
+  const [history, setHistory] = useState([]);
+  const [activeTechs, setActiveTechs] = useState([]);
+  const [apiKey, setApiKey] = useState("");
+  const [apiSaved, setApiSaved] = useState(false);
+  const [testInput, setTestInput] = useState("");
+  const [testOutput, setTestOutput] = useState(null);
+  const [testLoading, setTestLoading] = useState(false);
+  const [showTest, setShowTest] = useState(false);
+  const taRef = useRef(null);
+  const resultRef = useRef(null);
+
+  useEffect(() => {
+    try {
+      const h = localStorage.getItem("pf_history");
+      if (h) setHistory(JSON.parse(h));
+      const k = localStorage.getItem("pf_apikey");
+      if (k) { setApiKey(k); setApiSaved(true); }
+    } catch {}
+  }, []);
+
+  const saveApiKey = () => {
+    try { localStorage.setItem("pf_apikey", apiKey); setApiSaved(true); } catch {}
+  };
+
+  const animateLoading = (startStep = 0) => {
+    setStepIdx(startStep);
+    setProgress(20);
+    let i = startStep;
+    const iv = setInterval(() => {
+      i++;
+      if (i >= LOADING_STEPS.length) { clearInterval(iv); return; }
+      setStepIdx(i);
+      setProgress(Math.min(90, 20 + i * 18));
+    }, 900);
+    return iv;
+  };
+
+  const callAPI = async (systemPrompt, userMsg) => {
+    const key = apiKey || localStorage.getItem("pf_apikey") || "";
+    const headers = { "Content-Type": "application/json" };
+    if (key) headers["x-api-key"] = key;
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 1000,
+        system: systemPrompt,
+        messages: [{ role: "user", content: userMsg }]
+      })
+    });
+    const data = await res.json();
+    const raw = (data.content || []).map(b => b.text || "").join("");
+    const clean = raw.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+    return JSON.parse(clean);
+  };
+
+  const callAPIPlain = async (systemPrompt, userMsg) => {
+    const key = apiKey || localStorage.getItem("pf_apikey") || "";
+    const headers = { "Content-Type": "application/json" };
+    if (key) headers["x-api-key"] = key;
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 1000,
+        system: systemPrompt,
+        messages: [{ role: "user", content: userMsg }]
+      })
+    });
+    const data = await res.json();
+    return (data.content || []).map(b => b.text || "").join("");
+  };
+
+  const handleAnalyze = async () => {
+    if (!raw.trim()) return;
+    setError(null);
+    setPhase("loading");
+    const iv = animateLoading(0);
+    try {
+      const data = await callAPI(ANALYZER_SYS, raw);
+      clearInterval(iv);
+      setProgress(100);
+      setAnalysis(data);
+      if (data.needs_clarification && data.questions?.length > 0) {
+        setTimeout(() => { setPhase("questions"); }, 300);
+      } else {
+        await enhance(raw, [], iv);
+      }
+    } catch (e) {
+      clearInterval(iv);
+      setError("Analysis failed. Check your connection and try again.");
+      setPhase("input");
+    }
+  };
+
+  const enhance = async (prompt, qa) => {
+    setPhase("loading");
+    const iv = animateLoading(2);
+    let msg = `Original prompt:\n${prompt}`;
+    if (qa.length > 0) msg += "\n\nClarification answers:\n" + qa.map(q => `Q: ${q.q}\nA: ${q.a}`).join("\n\n");
+    try {
+      const data = await callAPI(ENHANCER_SYS, msg);
+      clearInterval(iv);
+      setProgress(100);
+      setResult(data);
+      setActiveTechs(data.techniques_used || []);
+      const entry = { id: Date.now(), original: prompt.slice(0, 80), score_before: data.score_before, score_after: data.score_after, full: data };
+      const updated = [entry, ...history].slice(0, 8);
+      setHistory(updated);
+      try { localStorage.setItem("pf_history", JSON.stringify(updated)); } catch {}
+      setTimeout(() => { setPhase("result"); resultRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }); }, 300);
+    } catch (e) {
+      clearInterval(iv);
+      setError("Enhancement failed. Please try again.");
+      setPhase("input");
+    }
+  };
+
+  const handleSubmitAnswers = () => {
+    const qa = analysis.questions.map(q => ({ q: q.question, a: answers[q.id] || "(skipped)" }));
+    enhance(raw, qa);
+  };
+
+  const handleTestPrompt = async () => {
+    if (!result) return;
+    setTestLoading(true);
+    setTestOutput(null);
+    try {
+      const sys = result.enhanced_prompt;
+      const userMsg = testInput.trim() || "Please proceed with the task as described.";
+      const out = await callAPIPlain(sys, userMsg);
+      setTestOutput(out);
+    } catch (e) {
+      setTestOutput("Error running test. Please try again.");
+    }
+    setTestLoading(false);
+  };
+
+  const handleCopy = (text) => {
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const reset = () => {
+    setPhase("input");
+    setResult(null);
+    setAnalysis(null);
+    setAnswers({});
+    setActiveTechs([]);
+    setError(null);
+    setTestOutput(null);
+    setTestInput("");
+    setShowTest(false);
+    setProgress(0);
+    setTimeout(() => taRef.current?.focus(), 100);
+  };
+
+  const clearHistory = () => {
+    setHistory([]);
+    try { localStorage.removeItem("pf_history"); } catch {}
+  };
+
+  const showInput = phase === "input" || phase === "result";
+
+  return (
+    <div className="app">
+      {/* HEADER */}
+      <div className="header">
+        <div className="badge">◈ AI Prompt Engineering Tool</div>
+        <h1 className="title">Prompt<em>Forge</em></h1>
+        <p className="subtitle">Write in any language — get a precision-engineered prompt in English that any AI understands perfectly.</p>
+      </div>
+
+      {/* TECHNIQUES */}
+      <div className="techs">
+        {ALL_TECHS.map(t => (
+          <span key={t} className={`tpill ${activeTechs.includes(t) ? "on" : ""}`}>{t}</span>
+        ))}
+      </div>
+
+      <div className="main">
+
+        {/* API KEY */}
+        {!apiSaved && (
+          <div className="api-notice">
+            <span className="api-notice-icon">🔑</span>
+            <div className="api-notice-text">
+              <strong>Add your Anthropic API Key to use PromptForge</strong>
+              Get yours free at console.anthropic.com — stored locally in your browser only.
+              <div className="api-key-row">
+                <input className="api-input" type="password" placeholder="sk-ant-api03-..." value={apiKey} onChange={e => setApiKey(e.target.value)} onKeyDown={e => e.key === "Enter" && saveApiKey()} />
+                <button className="api-save-btn" onClick={saveApiKey}>Save Key</button>
+              </div>
+            </div>
+          </div>
+        )}
+        {apiSaved && (
+          <div style={{display:"flex",justifyContent:"flex-end",marginBottom:"8px"}}>
+            <span className="api-saved">✓ API Key saved &nbsp;<button className="hist-clear" onClick={() => { setApiSaved(false); localStorage.removeItem("pf_apikey"); }}>change</button></span>
+          </div>
+        )}
+
+        {/* ERROR */}
+        {error && <div className="err">⚠ {error}</div>}
+
+        {/* INPUT */}
+        {showInput && (
+          <div className="panel">
+            <div className="panel-top">
+              <span className="panel-lbl">Your Raw Prompt</span>
+              {analysis?.detected_language && (
+                <span className="lang-badge">⬡ {analysis.detected_language} → English</span>
+              )}
+            </div>
+            <textarea ref={taRef} className="raw" value={raw} onChange={e => setRaw(e.target.value)}
+              placeholder={"اكتب برومبتك هنا بأي لغة...\nWrite your prompt in any language...\n\nمثال: اعمل لي محتوى سوشيال ميديا عن منتجي"}
+              onKeyDown={e => { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) handleAnalyze(); }} />
+            <div className="panel-foot">
+              <span className={`char-ct ${raw.length > 2000 ? "warn" : ""}`}>{raw.length} chars · Ctrl+Enter to analyze</span>
+              <button className="btn" onClick={handleAnalyze} disabled={!raw.trim() || !apiSaved}>
+                ⚡ Analyze &amp; Enhance
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* LOADING */}
+        {phase === "loading" && (
+          <div className="loading">
+            <div className="orb" />
+            <div className="loading-msg">{LOADING_STEPS[stepIdx]}</div>
+            <div className="progress-wrap"><div className="progress-bar" style={{width: progress + "%"}} /></div>
+            <div className="loading-steps">
+              {LOADING_STEPS.map((s, i) => (
+                <div key={i} className={`lstep ${i <= stepIdx ? "on" : ""}`}>
+                  {i < stepIdx ? "✓" : i === stepIdx ? "→" : "○"} {s}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* QUESTIONS */}
+        {phase === "questions" && analysis && (
+          <div className="q-panel">
+            <div className="q-head">
+              <div className="q-icon">❓</div>
+              <div>
+                <div className="q-title">Quick Clarification Needed</div>
+                <div className="q-desc">Answering these will significantly improve the result</div>
+              </div>
+            </div>
+            <div className="q-body">
+              {analysis.questions.map((q, i) => (
+                <div key={q.id} className="qitem">
+                  <div className="qtext">{i + 1}. {q.question}</div>
+                  <div className="qwhy">→ {q.why}</div>
+                  {q.options && (
+                    <div className="opts">
+                      {q.options.map(opt => (
+                        <button key={opt} className={`opt ${answers[q.id] === opt ? "sel" : ""}`}
+                          onClick={() => setAnswers(p => ({ ...p, [q.id]: opt }))}>{opt}</button>
+                      ))}
+                    </div>
+                  )}
+                  <textarea className="qa" placeholder="أو اكتب إجابتك هنا... / or type here..."
+                    value={answers[q.id] && !q.options?.includes(answers[q.id]) ? answers[q.id] : ""}
+                    onChange={e => setAnswers(p => ({ ...p, [q.id]: e.target.value }))} />
+                </div>
+              ))}
+            </div>
+            <div className="q-foot">
+              <button className="btn ghost sm" onClick={() => enhance(raw, [])}>Skip → Enhance Anyway</button>
+              <button className="btn" onClick={handleSubmitAnswers}>Submit &amp; Enhance ⚡</button>
+            </div>
+          </div>
+        )}
+
+        {/* RESULT */}
+        {phase === "result" && result && (
+          <div className="result" ref={resultRef}>
+
+            {/* Scores */}
+            <div className="scores" style={{gridTemplateColumns:"1fr 1fr",display:"grid",gap:"10px"}}>
+              <div className="score-card">
+                <div className="sc-lbl">Before</div>
+                <div className="sc-val bad">{result.score_before}<span style={{fontSize:"18px"}}>/10</span></div>
+                <div className="sc-sub">Original prompt</div>
+              </div>
+              <div className="score-card">
+                <div className="sc-lbl">After</div>
+                <div className="sc-val good">{result.score_after}<span style={{fontSize:"18px"}}>/10</span></div>
+                <div className="sc-sub"><span className={`qbadge ${result.estimated_quality}`}>{result.estimated_quality}</span></div>
+              </div>
+              {result.score_explanation && (
+                <div className="sc-exp" style={{gridColumn:"1/-1"}}>{result.score_explanation}</div>
+              )}
+            </div>
+
+            {/* Enhanced Prompt */}
+            <div className="rcard">
+              <div className="rcard-head">
+                <span className="rcard-title">Enhanced Prompt</span>
+                <button className={`copy-btn ${copied ? "ok" : ""}`} onClick={() => handleCopy(result.enhanced_prompt)}>
+                  {copied ? "✓ Copied!" : "Copy"}
+                </button>
+              </div>
+              <pre className="enhanced">{result.enhanced_prompt}</pre>
+              <div className="rcard-head" style={{borderTop:"1px solid var(--border)",borderBottom:"none"}}>
+                <span className="rcard-title">Techniques Applied</span>
+              </div>
+              <div className="techs-used">
+                {(result.techniques_used || []).map(t => <span key={t} className="upill">✓ {t}</span>)}
+              </div>
+            </div>
+
+            {/* Improvements */}
+            <div className="rcard">
+              <div className="rcard-head"><span className="rcard-title">Key Improvements</span></div>
+              <div className="imps">
+                {(result.key_improvements || []).map((imp, i) => (
+                  <div key={i} className="imp">
+                    <span className="impn">{i + 1}</span>
+                    <span>{imp}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Tip */}
+            {result.usage_tip && (
+              <div className="tip">
+                <span className="tip-ico">💡</span>
+                <span className="tip-txt"><strong>Pro Tip: </strong>{result.usage_tip}</span>
+              </div>
+            )}
+
+            {/* TEST YOUR PROMPT — NEW FEATURE */}
+            <div className="test-card">
+              <div className="test-head">
+                <span className="test-title">Test Your Enhanced Prompt</span>
+                <span className="test-new">NEW</span>
+              </div>
+              {!showTest ? (
+                <div style={{padding:"14px"}}>
+                  <button className="btn green sm" onClick={() => setShowTest(true)}>▶ Run a Test</button>
+                  <span style={{fontSize:"12px",color:"var(--text-muted)",marginRight:"10px"}}> — Try the enhanced prompt live with Claude</span>
+                </div>
+              ) : (
+                <div className="test-body">
+                  <p className="test-note">The enhanced prompt will be used as the system instruction. Add any user message below (or leave empty to run as-is):</p>
+                  <textarea className="test-in" value={testInput} onChange={e => setTestInput(e.target.value)}
+                    placeholder="Add a user message here... (optional)" />
+                  <div className="test-actions">
+                    <button className="btn green sm" onClick={handleTestPrompt} disabled={testLoading}>
+                      {testLoading ? "Running..." : "▶ Run Test"}
+                    </button>
+                    <button className="btn ghost sm" onClick={() => { setShowTest(false); setTestOutput(null); }}>Cancel</button>
+                    {testOutput && (
+                      <button className="copy-btn" onClick={() => handleCopy(testOutput)} style={{marginRight:"auto"}}>Copy Output</button>
+                    )}
+                  </div>
+                  {testLoading && (
+                    <div className="test-loading"><div className="mini-orb" /> Running enhanced prompt...</div>
+                  )}
+                  {testOutput && <div className="test-result">{testOutput}</div>}
+                </div>
+              )}
+            </div>
+
+            {/* Actions */}
+            <div className="rcard">
+              <div className="ract">
+                <button className="btn" onClick={() => handleCopy(result.enhanced_prompt)}>
+                  {copied ? "✓ Copied!" : "📋 Copy Prompt"}
+                </button>
+                <button className="btn ghost" onClick={reset}>← New Prompt</button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* HISTORY */}
+      {history.length > 0 && phase !== "loading" && phase !== "questions" && (
+        <div className="hist-section">
+          <div className="sec-lbl">
+            Recent Prompts
+            <button className="hist-clear" onClick={clearHistory}>Clear All</button>
+          </div>
+          {history.map(item => (
+            <div key={item.id} className="hist-item" onClick={() => { setResult(item.full); setActiveTechs(item.full.techniques_used || []); setPhase("result"); }}>
+              <span className="hist-txt">{item.original}...</span>
+              <span className="hist-score">{item.score_before}→{item.score_after}/10</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div className="footer">
+        PromptForge — Built with Claude API &nbsp;·&nbsp; <a href="https://console.anthropic.com" target="_blank">Get API Key</a>
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<PromptForge />);
+</script>
+</body>
+</html>
